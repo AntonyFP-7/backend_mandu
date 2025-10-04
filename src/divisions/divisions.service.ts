@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateDivisionDto } from './dto/create-division.dto';
+import { UpdateDivisionDto } from './dto/update-division.dto';
 
 @Injectable()
 export class DivisionsService {
@@ -52,17 +54,11 @@ export class DivisionsService {
   }
 
   // Crear una nueva división
-  async create(divisionData: {
-    name: string;
-    level: number;
-    status?: boolean;
-    parentId?: number;
-    ambassadorId?: number;
-  }) {
+  async create(divisionData: CreateDivisionDto) {
     try {
       return await this.prisma.division.create({
         data: {
-          name: divisionData.name,
+          name: divisionData.name.trim(),
           level: divisionData.level,
           status: divisionData.status ?? true,
           parentId: divisionData.parentId || null,
@@ -80,13 +76,7 @@ export class DivisionsService {
   }
 
   // Actualizar una división
-  async update(id: number, updateData: {
-    name?: string;
-    level?: number;
-    status?: boolean;
-    parentId?: number;
-    ambassadorId?: number;
-  }) {
+  async update(id: number, updateData: UpdateDivisionDto) {
     try {
       // Verificar que la división existe
       await this.findOne(id);

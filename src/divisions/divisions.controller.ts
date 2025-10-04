@@ -9,9 +9,11 @@ import {
   Query,
   ParseIntPipe,
   HttpCode,
-  HttpStatus 
+  HttpStatus
 } from '@nestjs/common';
 import { DivisionsService } from './divisions.service';
+import { CreateDivisionDto } from './dto/create-division.dto';
+import { UpdateDivisionDto } from './dto/update-division.dto';
 
 @Controller('api/v1')
 export class DivisionsController {
@@ -44,13 +46,7 @@ export class DivisionsController {
   // Crear una division
   @Post('divisions')
   @HttpCode(HttpStatus.CREATED)
-  async createDivision(@Body() createData: {
-    name: string;
-    level: number;
-    status?: boolean;
-    parentId?: number;
-    ambassadorId?: number;
-  }) {
+  async createDivision(@Body() createData: CreateDivisionDto) {
     return await this.divisionsService.create(createData);
   }
 
@@ -58,13 +54,7 @@ export class DivisionsController {
   @Put('divisions/:id')
   async updateDivision(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateData: {
-      name?: string;
-      level?: number;
-      status?: boolean;
-      parentId?: number;
-      ambassadorId?: number;
-    }
+    @Body() updateData: UpdateDivisionDto
   ) {
     return await this.divisionsService.update(id, updateData);
   }
