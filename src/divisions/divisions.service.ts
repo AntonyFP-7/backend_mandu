@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDivisionDto } from './dto/create-division.dto';
 import { UpdateDivisionDto } from './dto/update-division.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class DivisionsService {
@@ -53,9 +54,31 @@ export class DivisionsService {
     }
   }
 
+  // Obtener una división por nombre
+  async findByName(name: string) {
+    try {
+      return await this.prisma.division.findFirst({
+        where: { name },
+        include: {
+          ambassador: true,
+          parent: true,
+          children: true,
+        },
+      });
+    } catch (error) {
+      throw new Error(`Error al buscar división por nombre: ${error.message}`);
+    }
+  }
+
   // Crear una nueva división
   async create(divisionData: CreateDivisionDto) {
     try {
+      // Validación de nombre único
+      const existingDivision = await this.findByName(divisionData.name);
+      if (existingDivision) {
+        throw new ConflictException(`Ya existe una división con el nombre "${divisionData.name}"`);
+      }
+
       return await this.prisma.division.create({
         data: {
           name: divisionData.name.trim(),
@@ -71,6 +94,17 @@ export class DivisionsService {
         },
       });
     } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      
+      // Manejar errores específicos de Prisma
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException('El nombre de la división ya existe');
+        }
+      }
+      
       throw new Error(`Error al crear división: ${error.message}`);
     }
   }
@@ -81,10 +115,18 @@ export class DivisionsService {
       // Verificar que la división existe
       await this.findOne(id);
 
+      // Si se está actualizando el nombre, verificar que no esté duplicado
+      if (updateData.name) {
+        const existingDivision = await this.findByName(updateData.name);
+        if (existingDivision && existingDivision.id !== id) {
+          throw new ConflictException(`Ya existe una división con el nombre "${updateData.name}"`);
+        }
+      }
+
       return await this.prisma.division.update({
         where: { id },
         data: {
-          ...(updateData.name && { name: updateData.name }),
+          ...(updateData.name && { name: updateData.name.trim() }),
           ...(updateData.level && { level: updateData.level }),
           ...(updateData.status !== undefined && { status: updateData.status }),
           ...(updateData.parentId !== undefined && { parentId: updateData.parentId }),
@@ -97,9 +139,17 @@ export class DivisionsService {
         },
       });
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof NotFoundException || error instanceof ConflictException) {
         throw error;
       }
+      
+      // Manejar errores específicos de Prisma
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException('El nombre de la división ya existe');
+        }
+      }
+      
       throw new Error(`Error al actualizar división: ${error.message}`);
     }
   }

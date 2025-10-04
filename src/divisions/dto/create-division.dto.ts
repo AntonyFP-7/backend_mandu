@@ -1,8 +1,9 @@
-import { IsString, IsInt, IsBoolean, IsOptional, Min, Max, MaxLength } from 'class-validator';
+import { IsString, IsInt, IsBoolean, IsOptional, Min, Max, MaxLength, IsNotEmpty } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateDivisionDto {
-  @IsString()
+  @IsString({ message: 'El nombre debe ser una cadena de texto' })
+  @IsNotEmpty({ message: 'El nombre es obligatorio' })
   @MaxLength(45, { message: 'El nombre no puede exceder 45 caracteres' })
   name: string;
 

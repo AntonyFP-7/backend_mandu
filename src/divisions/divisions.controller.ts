@@ -31,6 +31,19 @@ export class DivisionsController {
     return await this.divisionsService.findByLevel(level);
   }
 
+  // Verificar si un nombre está disponible
+  @Get('divisions/check-name/:name')
+  async checkNameAvailability(@Param('name') name: string) {
+    const existingDivision = await this.divisionsService.findByName(name);
+    return {
+      name: name,
+      available: !existingDivision,
+      message: existingDivision 
+        ? `El nombre "${name}" ya está en uso` 
+        : `El nombre "${name}" está disponible`
+    };
+  }
+
   // Obtener divisiones hijas de un parent
   @Get('divisions/:parentId/children')
   async getChildrenDivisions(@Param('parentId', ParseIntPipe) parentId: number) {
@@ -56,6 +69,8 @@ export class DivisionsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateData: UpdateDivisionDto
   ) {
+    // Agregar el ID al objeto para la validación de nombre único
+    (updateData as any).id = id;
     return await this.divisionsService.update(id, updateData);
   }
 
