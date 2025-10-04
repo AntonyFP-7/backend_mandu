@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { DivisionsModule } from './divisions/divisions.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ExistsParentDivisionConstraint } from './divisions/validators/exists-parent-division.validator';
+import { ExistsAmbassadorConstraint } from './divisions/validators/exists-ambassador.validator';
 
 @Module({
   imports: [
@@ -15,6 +17,10 @@ import { PrismaModule } from './prisma/prisma.module';
     DivisionsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService, 
+    ExistsParentDivisionConstraint, 
+    ExistsAmbassadorConstraint
+  ],
 })
 export class AppModule {}

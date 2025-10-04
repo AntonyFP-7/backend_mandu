@@ -3,9 +3,13 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { PORT } from './config/enviroment';
 import { ValidationPipe } from '@nestjs/common';
+import { useContainer } from 'class-validator';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  
+  // Configurar class-validator para usar el contenedor de NestJS
+  useContainer(app.select(AppModule), { fallbackOnErrors: true });
   
   // Configurar ValidationPipe globalmente
   app.useGlobalPipes(new ValidationPipe({

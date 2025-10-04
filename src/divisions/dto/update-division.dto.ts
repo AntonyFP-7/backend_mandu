@@ -1,12 +1,12 @@
 import { IsString, IsInt, IsBoolean, IsOptional, Min, Max, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
-import { IsUniqueDivisionName } from '../validators/unique-division-name.validator';
+import { ExistsParentDivision } from '../validators/exists-parent-division.validator';
+import { ExistsAmbassador } from '../validators/exists-ambassador.validator';
 
 export class UpdateDivisionDto {
   @IsOptional()
   @IsString()
   @MaxLength(45, { message: 'El nombre no puede exceder 45 caracteres' })
-  @IsUniqueDivisionName({ message: 'Ya existe una división con este nombre' })
   name?: string;
 
   @IsOptional()
@@ -17,6 +17,7 @@ export class UpdateDivisionDto {
   level?: number;
 
   @IsOptional()
+  @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   status?: boolean;
@@ -24,10 +25,12 @@ export class UpdateDivisionDto {
   @IsOptional()
   @IsInt({ message: 'El ID del parent debe ser un número entero' })
   @Type(() => Number)
+  @ExistsParentDivision({ message: 'La división padre no existe o crearía una referencia circular' })
   parentId?: number;
 
   @IsOptional()
   @IsInt({ message: 'El ID del ambassador debe ser un número entero' })
   @Type(() => Number)
+  @ExistsAmbassador({ message: 'El embajador no existe' })
   ambassadorId?: number;
 }

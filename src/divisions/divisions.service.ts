@@ -94,7 +94,7 @@ export class DivisionsService {
         },
       });
     } catch (error) {
-      if (error instanceof ConflictException) {
+      if (error instanceof ConflictException || error instanceof NotFoundException) {
         throw error;
       }
       
@@ -102,6 +102,9 @@ export class DivisionsService {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           throw new ConflictException('El nombre de la división ya existe');
+        }
+        if (error.code === 'P2003') {
+          throw new NotFoundException('El ID de referencia proporcionado no existe');
         }
       }
       
@@ -147,6 +150,9 @@ export class DivisionsService {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           throw new ConflictException('El nombre de la división ya existe');
+        }
+        if (error.code === 'P2003') {
+          throw new NotFoundException('El ID de referencia proporcionado no existe');
         }
       }
       

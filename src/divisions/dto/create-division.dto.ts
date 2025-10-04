@@ -1,5 +1,16 @@
-import { IsString, IsInt, IsBoolean, IsOptional, Min, Max, MaxLength, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsBoolean,
+  IsOptional,
+  Min,
+  Max,
+  MaxLength,
+  IsNotEmpty,
+} from 'class-validator';
 import { Type } from 'class-transformer';
+import { ExistsParentDivision } from '../validators/exists-parent-division.validator';
+import { ExistsAmbassador } from '../validators/exists-ambassador.validator';
 
 export class CreateDivisionDto {
   @IsString({ message: 'El nombre debe ser una cadena de texto' })
@@ -21,10 +32,12 @@ export class CreateDivisionDto {
   @IsOptional()
   @IsInt({ message: 'El ID del parent debe ser un número entero' })
   @Type(() => Number)
+  @ExistsParentDivision({ message: 'La división padre no existe o crearía una referencia circular' })
   parentId?: number;
 
   @IsOptional()
   @IsInt({ message: 'El ID del ambassador debe ser un número entero' })
   @Type(() => Number)
+  @ExistsAmbassador({ message: 'El embajador no existe' })
   ambassadorId?: number;
 }
