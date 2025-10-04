@@ -1,30 +1,78 @@
-import { Controller, Delete, Get, Post, Put } from '@nestjs/common';
+import { 
+  Controller, 
+  Delete, 
+  Get, 
+  Post, 
+  Put, 
+  Param, 
+  Body, 
+  Query,
+  ParseIntPipe,
+  HttpCode,
+  HttpStatus 
+} from '@nestjs/common';
+import { DivisionsService } from './divisions.service';
 
 @Controller('api/v1')
 export class DivisionsController {
-  //obtener todas las divisiones
+  constructor(private readonly divisionsService: DivisionsService) {}
+
+  // Obtener todas las divisiones
   @Get('divisions')
-  getDivisions() {
-    return 'Aquí van las divisiones';
+  async getDivisions() {
+    return await this.divisionsService.findAll();
   }
-  //obtener una division por id
+
+  // Obtener divisiones por nivel (query parameter)
+  @Get('divisions/level/:level')
+  async getDivisionsByLevel(@Param('level', ParseIntPipe) level: number) {
+    return await this.divisionsService.findByLevel(level);
+  }
+
+  // Obtener divisiones hijas de un parent
+  @Get('divisions/:parentId/children')
+  async getChildrenDivisions(@Param('parentId', ParseIntPipe) parentId: number) {
+    return await this.divisionsService.findChildren(parentId);
+  }
+
+  // Obtener una division por id
   @Get('divisions/:id')
-  getDivisionById() {
-    return 'Aquí va una division por id';
+  async getDivisionById(@Param('id', ParseIntPipe) id: number) {
+    return await this.divisionsService.findOne(id);
   }
-  //crear una division
+
+  // Crear una division
   @Post('divisions')
-  createDivision() {
-    return 'Aquí se crea una division';
+  @HttpCode(HttpStatus.CREATED)
+  async createDivision(@Body() createData: {
+    name: string;
+    level: number;
+    status?: boolean;
+    parentId?: number;
+    ambassadorId?: number;
+  }) {
+    return await this.divisionsService.create(createData);
   }
-  //actualizar una division
+
+  // Actualizar una division
   @Put('divisions/:id')
-  updateDivision() {
-    return 'Aquí se actualiza una division';
+  async updateDivision(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateData: {
+      name?: string;
+      level?: number;
+      status?: boolean;
+      parentId?: number;
+      ambassadorId?: number;
+    }
+  ) {
+    return await this.divisionsService.update(id, updateData);
   }
-  //eliminar una division
+
+  // Eliminar una division
   @Delete('divisions/:id')
-  deleteDivision() {
-    return 'Aquí se elimina una division';
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteDivision(@Param('id', ParseIntPipe) id: number) {
+    return await this.divisionsService.remove(id);
   }
 }
