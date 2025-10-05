@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { LoginService } from './login.service';
 import { LoginDto } from './dto/login.dto';
 
@@ -8,9 +8,8 @@ export class LoginController {
 
   //creamos api de login
   @Post('login')
-  async login(
-    @Body() body: LoginDto
- ) {
-    return await this.loginService.login( body.email, body.password );
+  @HttpCode(HttpStatus.OK) // Explícitamente devolver 200 en lugar de 201 para login
+  async login(@Body() loginDto: LoginDto) {
+    return await this.loginService.login(loginDto.email, loginDto.password);
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { HashService } from 'src/common/services/hash.service';
 
@@ -16,7 +16,20 @@ export class LoginService {
     });
 
     if (!user) {
-      throw new Error('Usuario no encontrado');
+      throw new NotFoundException({
+        statusCode: 404,
+        message: 'Usuario no encontrado',
+        error: 'Not Found'
+      });
+    }
+
+    // Verificar que el usuario esté activo
+    if (!user.status) {
+      throw new UnauthorizedException({
+        statusCode: 401,
+        message: 'Usuario desactivado. Contacte al administrador',
+        error: 'Unauthorized'
+      });
     }
 
     // Verificar la contraseña
@@ -26,9 +39,18 @@ export class LoginService {
     );
 
     if (!passwordMatches) {
-      throw new Error('Contraseña incorrecta');
+      throw new UnauthorizedException({
+        statusCode: 401,
+        message: 'Credenciales incorrectas',
+        error: 'Unauthorized'
+      });
     }
+    
     const { password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return {
+      statusCode: 200,
+      message: 'Inicio de sesión exitoso',
+      data: userWithoutPassword
+    };
   }
 }
