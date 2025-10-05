@@ -1,4 +1,5 @@
 import { PrismaClient } from '../generated/prisma';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -204,6 +205,27 @@ async function main() {
   ]);
 
   console.log('✅ Employees creados:', employees.length, 'empleados');
+  
+  //creamos 1 usuario admin
+  console.log('👤 Creando usuario administrador...');
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash('admin123', saltRounds);
+  
+  const adminUser = await prisma.user.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      email: 'admin@mandu.com',
+      password: hashedPassword, // Contraseña hasheada con bcrypt
+      status: true,
+    },
+  });
+
+  console.log('✅ Usuario administrador creado:', {
+    id: adminUser.id,
+    email: adminUser.email,
+    status: adminUser.status
+  });
 
   console.log('🎉 Seeder completado exitosamente!');
 }
