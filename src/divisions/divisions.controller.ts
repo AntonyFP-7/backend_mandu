@@ -14,6 +14,7 @@ import {
 import { DivisionsService } from './divisions.service';
 import { CreateDivisionDto } from './dto/create-division.dto';
 import { UpdateDivisionDto } from './dto/update-division.dto';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('api/v1')
 export class DivisionsController {
@@ -59,7 +60,11 @@ export class DivisionsController {
   // Crear una division
   @Post('divisions')
   @HttpCode(HttpStatus.CREATED)
-  async createDivision(@Body() createData: CreateDivisionDto) {
+  async createDivision(
+    @Body() createData: CreateDivisionDto,
+    @CurrentUser() user: any
+  ) {
+    console.log('Usuario autenticado:', user); // Para debugging
     return await this.divisionsService.create(createData);
   }
 

@@ -9,6 +9,8 @@ import { ExistsParentDivisionConstraint } from './divisions/validators/exists-pa
 import { ExistsAmbassadorConstraint } from './divisions/validators/exists-ambassador.validator';
 import { ExistsEmailUserValidator } from './login/validators/exists-email-user.validator';
 import { LoginModule } from './login/login.module';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthGuard } from './common/guards/auth.guard';
 
 @Module({
   imports: [
@@ -26,7 +28,11 @@ import { LoginModule } from './login/login.module';
     AppService, 
     ExistsParentDivisionConstraint, 
     ExistsAmbassadorConstraint,
-    ExistsEmailUserValidator
+    ExistsEmailUserValidator,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    }
   ],
 })
 export class AppModule {}
