@@ -1,12 +1,18 @@
-import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { HashService } from 'src/common/services/hash.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class LoginService {
   constructor(
     private prisma: PrismaService,
     private hashService: HashService,
+    private jwtService: JwtService,
   ) {}
   //creamos metodos para el login
   async login(email: string, password: string) {
@@ -19,7 +25,7 @@ export class LoginService {
       throw new NotFoundException({
         statusCode: 404,
         message: 'Usuario no encontrado',
-        error: 'Not Found'
+        error: 'Not Found',
       });
     }
 
@@ -28,7 +34,7 @@ export class LoginService {
       throw new UnauthorizedException({
         statusCode: 401,
         message: 'Usuario desactivado. Contacte al administrador',
-        error: 'Unauthorized'
+        error: 'Unauthorized',
       });
     }
 
@@ -42,15 +48,20 @@ export class LoginService {
       throw new UnauthorizedException({
         statusCode: 401,
         message: 'Credenciales incorrectas',
-        error: 'Unauthorized'
+        error: 'Unauthorized',
       });
     }
-    
+
     const { password: _, ...userWithoutPassword } = user;
+    const payload = {
+      userWithoutPassword,
+    };
+    const access_token = await this.jwtService.signAsync(payload);
     return {
       statusCode: 200,
       message: 'Inicio de sesión exitoso',
-      data: userWithoutPassword
+      data: userWithoutPassword,
+      token: access_token,
     };
   }
 }
