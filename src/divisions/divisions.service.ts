@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDivisionDto } from './dto/create-division.dto';
 import { UpdateDivisionDto } from './dto/update-division.dto';
@@ -18,13 +22,14 @@ export class DivisionsService {
           children: true,
           employees: true,
         },
-        orderBy: [
-          { level: 'asc' },
-          { name: 'asc' }
-        ]
+        orderBy: [{ level: 'asc' }, { name: 'asc' }],
       });
     } catch (error) {
-      throw new Error(`Error al obtener divisiones: ${error.message}`);
+      throw new NotFoundException({
+        statusCode: 404,
+        message: 'Error al obtener divisiones',
+        error: error.message,
+      });
     }
   }
 
@@ -42,15 +47,19 @@ export class DivisionsService {
       });
 
       if (!division) {
-        throw new NotFoundException(`División con ID ${id} no encontrada`);
+        throw new NotFoundException({
+          statusCode: 404,
+          message: `División con ID ${id} no encontrada`,
+          error: 'no found',
+        });
       }
 
       return division;
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new Error(`Error al obtener división: ${error.message}`);
+      throw new NotFoundException({
+        statusCode: 404,
+        message: error.message,
+      });
     }
   }
 
@@ -66,7 +75,11 @@ export class DivisionsService {
         },
       });
     } catch (error) {
-      throw new Error(`Error al buscar división por nombre: ${error.message}`);
+      throw new NotFoundException({
+        statusCode: 404,
+        message: 'Error al buscar división por nombre',
+        error: error.message,
+      });
     }
   }
 
@@ -76,7 +89,9 @@ export class DivisionsService {
       // Validación de nombre único
       const existingDivision = await this.findByName(divisionData.name);
       if (existingDivision) {
-        throw new ConflictException(`Ya existe una división con el nombre "${divisionData.name}"`);
+        throw new ConflictException(
+          `Ya existe una división con el nombre "${divisionData.name}"`,
+        );
       }
 
       return await this.prisma.division.create({
@@ -94,21 +109,28 @@ export class DivisionsService {
         },
       });
     } catch (error) {
-      if (error instanceof ConflictException || error instanceof NotFoundException) {
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
-      
+
       // Manejar errores específicos de Prisma
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           throw new ConflictException('El nombre de la división ya existe');
         }
         if (error.code === 'P2003') {
-          throw new NotFoundException('El ID de referencia proporcionado no existe');
+          throw new NotFoundException(
+            'El ID de referencia proporcionado no existe',
+          );
         }
       }
-      
-      throw new Error(`Error al crear división: ${error.message}`);
+      throw new NotFoundException({
+        statusCode: 404,
+        message: 'Error al crear división',
+      });
     }
   }
 
@@ -122,7 +144,9 @@ export class DivisionsService {
       if (updateData.name) {
         const existingDivision = await this.findByName(updateData.name);
         if (existingDivision && existingDivision.id !== id) {
-          throw new ConflictException(`Ya existe una división con el nombre "${updateData.name}"`);
+          throw new ConflictException(
+            `Ya existe una división con el nombre "${updateData.name}"`,
+          );
         }
       }
 
@@ -132,8 +156,12 @@ export class DivisionsService {
           ...(updateData.name && { name: updateData.name.trim() }),
           ...(updateData.level && { level: updateData.level }),
           ...(updateData.status !== undefined && { status: updateData.status }),
-          ...(updateData.parentId !== undefined && { parentId: updateData.parentId }),
-          ...(updateData.ambassadorId !== undefined && { ambassadorId: updateData.ambassadorId }),
+          ...(updateData.parentId !== undefined && {
+            parentId: updateData.parentId,
+          }),
+          ...(updateData.ambassadorId !== undefined && {
+            ambassadorId: updateData.ambassadorId,
+          }),
         },
         include: {
           ambassador: true,
@@ -142,21 +170,28 @@ export class DivisionsService {
         },
       });
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ConflictException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
-      
+
       // Manejar errores específicos de Prisma
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           throw new ConflictException('El nombre de la división ya existe');
         }
         if (error.code === 'P2003') {
-          throw new NotFoundException('El ID de referencia proporcionado no existe');
+          throw new NotFoundException(
+            'El ID de referencia proporcionado no existe',
+          );
         }
       }
-      
-      throw new Error(`Error al actualizar división: ${error.message}`);
+      throw new NotFoundException({
+        statusCode: 404,
+        message: 'Error al actualizar división',
+      });
     }
   }
 
@@ -165,24 +200,38 @@ export class DivisionsService {
     try {
       // Verificar que la división existe
       await this.findOne(id);
+      //verificar que no tenga empleados asignados
+      const employees = await this.prisma.employee.findMany({
+        where: { divisionId: id },
+      });
+      if (employees.length > 0) {
+        throw new NotFoundException({
+          statusCode: 404,
+          message:
+            'No se puede eliminar una división que tiene empleados asignados',
+        });
+      }
 
       // Verificar que no tenga divisiones hijas
       const children = await this.prisma.division.findMany({
-        where: { parentId: id }
+        where: { parentId: id },
       });
 
       if (children.length > 0) {
-        throw new Error('No se puede eliminar una división que tiene subdivisiones');
+        throw new NotFoundException({
+          statusCode: 404,
+          message: 'No se puede eliminar una división que tiene subdivisiones',
+        });
       }
 
       return await this.prisma.division.delete({
         where: { id },
       });
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new Error(`Error al eliminar división: ${error.message}`);
+      throw new NotFoundException({
+        statusCode: 404,
+        message: error.message,
+      });
     }
   }
 
@@ -196,10 +245,13 @@ export class DivisionsService {
           parent: true,
           children: true,
         },
-        orderBy: { name: 'asc' }
+        orderBy: { name: 'asc' },
       });
     } catch (error) {
-      throw new Error(`Error al obtener divisiones por nivel: ${error.message}`);
+      throw new NotFoundException({
+        statusCode: 404,
+        message: 'Error al obtener divisiones por nivel',
+      });
     }
   }
 
@@ -212,10 +264,13 @@ export class DivisionsService {
           ambassador: true,
           children: true,
         },
-        orderBy: { name: 'asc' }
+        orderBy: { name: 'asc' },
       });
     } catch (error) {
-      throw new Error(`Error al obtener divisiones hijas: ${error.message}`);
+      throw new NotFoundException({
+        statusCode: 404,
+        message: 'Error al obtener divisiones hijas',
+      });
     }
   }
 }
