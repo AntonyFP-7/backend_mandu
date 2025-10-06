@@ -20,7 +20,7 @@ async function bootstrap() {
       enableImplicitConversion: true, // Conversión automática de tipos
     },
   }));
-  
+  app.enableCors(); // Habilitar CORS si es necesario
   const configService = app.get(ConfigService);  
   const port = configService.get<number>(PORT, 3000); 
   await app.listen(port);
